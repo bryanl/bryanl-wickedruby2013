@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kmeans Clustering</title>
+  <script type="text/javascript" src="/d3.v3.js"></script>
+  <script type="text/javascript" src="/queue.v1.min.js"></script>
+</head> 
+
+<body>
+  <script type="text/javascript">
+    var w = 700,
+        h = 600,
+        centroidCount = 14,
+        recenterTimeout = 5000,
+        q = queue(),
+        dataURL = '/cluster.csv',
+        color = d3.scale.category20(),
+        centroidCoords = [];
+        clusterMembers = {}
+
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);
+
+    q.defer(function(callback) {
+      d3.csv(dataURL, function(res) {
+        callback(null, res)
+      });
+    });
+
+    q.await(getErDone);
+
+    function getErDone(err, results) {
+      console.log(results);
+
+      for (var i=0; i < centroidCount; i++) {
+        centroidCoords.push({i: i,
+                             x: getRandomInt(10, w-10),
+                             y: getRandomInt(10, h-10),
+                             color: color(i)})
+        clusterMembers[color(i)] = []
+      }
+
+      var maxX = d3.max(results, function(p){
+        return parseInt(p.x)
+      })
+      var maxY = d3.max(results, function(p){
+        return parseInt(p.y)
+      })
+      var minX = d3.min(results, function(p){
+        return parseInt(p.x)
+      })
+      var minY = d3.min(results, function(p){
+        return parseInt(p.y)
+      })
+
+
+      xScale = d3.scale.linear()
+                              .domain([minX, maxX])
+                              .range([10, w])
+
+      yScale = d3.scale.linear()
+                              .domain([minY, maxY])
+                              .range([10, h])
+
+
+
+      var points = svg.selectAll(".point")
+                      .data(results)                      
+                      .enter()
+                      .append("circle")                      
+
+      drawPoints(points)
+
+      var centroids = svg.selectAll(".centroid")
+                         .data(centroidCoords)
+                         .enter()
+                         .append("circle")
+
+      drawCentroids(centroids)
+
+      setTimeout(function(){
+        converge(points)
+      }, 5000)
+
+
+      console.log("done")
+    }
+
+    function converge(points) {
+      converged = false
+      count = 0
+
+      while (!converged && count < 100) {
+        var didMove = []
+        for (var i=0; i < centroidCount; i++) {
+          var distance = recenter(centroidCoords[i])
+          didMove[i] = distance > 2
+        }
+
+        points.transition()
+              .attr("fill", function(d){
+                var color = closestCentroidColor(d)
+                clusterMembers[color].push(d)
+                return closestCentroidColor(d)
+              })
+
+        converged = didMove.every(function(x){ return x == false })
+        console.log(count)
+        setTimeout(function(){
+          count += 1      
+        }, recenterTimeout)
+      }
+
+    }
+
+    function drawPoints(points) {
+      points
+        .attr("fill", function(d){
+          var color = closestCentroidColor(d)
+          clusterMembers[color].push(d)
+          return closestCentroidColor(d)
+        })
+        .attr("cx", function(d) {
+          return xScale(d.x)
+        })
+        .attr("cy", function(d) {
+          return yScale(d.y)
+        })
+        .attr("r", function(d) {
+          return 2
+        })
+        .attr("class", "point")
+    }
+
+    function drawCentroids(centroids) {
+      centroids
+        .attr("class", function(d){
+          return "centroid centroid-" + d.i
+        })
+        .attr("cx", function(d) {
+          return d.x
+        })
+        .attr("cy", function(d) {
+          return d.y
+        })
+        .attr("r", function(d) {
+          return 5
+        })
+        .attr("fill", function(d) {
+          return d.color
+        })
+    }
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function lineLength(p1, p2) {
+      return Math.sqrt( ( p1.x - p2.x ) * ( p1.x - p2.x ) + ( p1.y - p2.y ) * ( p1.y - p2.y ) ); 
+    }
+
+    function closestCentroidColor(p) {
+      var color;
+      var l;
+      var scaledPoint = {x: xScale(p.x), y: yScale(p.y)}
+
+      for (var i=0; i < centroidCoords.length; i++) {
+        var c = centroidCoords[i]
+        var ll = lineLength(scaledPoint, c)
+        if (typeof l == "undefined" || ll < l) {
+          l = ll
+          color = c.color
+        } 
+      }
+
+      return color;
+    }
+
+    function recenter(centroid) {
+      distanceMoved = 0;      
+
+      var members = clusterMembers[centroid.color]
+      var maxX = d3.max(members, function(d){
+        return xScale(d.x)
+      })
+      var maxY = d3.max(members, function(d){
+        return yScale(d.y)
+      })
+      var minX = d3.min(members, function(d){
+        return xScale(d.x)
+      })
+      var minY = d3.min(members, function(d){
+        return yScale(d.y)
+      })
+
+      clusterMembers[centroid.color] = []
+
+      var newX = (maxX + minX) / 2.0
+      var newY = (maxY + minY) / 2.0
+
+      distanceMoved = lineLength(centroid, {x: newX, y: newY})
+
+      centroid.x = newX
+      centroid.y = newY
+
+      var element = svg.select(".centroid-"+centroid.i)
+      element.transition()
+             .delay(recenterTimeout)
+             .attr("cx", centroid.x)
+             .attr("cy", centroid.y)
+
+      return distanceMoved;
+
+    }
+ 
+  </script>  
+</body>
+</html>

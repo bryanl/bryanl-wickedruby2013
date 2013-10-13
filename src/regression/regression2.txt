@@ -1,0 +1,19 @@
+set term png
+set output "brain_regression.png"
+set autoscale
+#
+#  Fields in each record are separated by commas.
+#
+set datafile separator ","
+
+set title "Body weight versus Brain weight"
+set xlabel "Brain weight in pounds"
+set ylabel "Body weight in pounds"
+set grid
+set timestamp
+
+f(x) = m*x+b
+fit f(x) 'brain.csv' using 2:3 via m,b
+plot 'brain.csv' using 2:3 title 'Line Fit' with points, f(x) title 'Fit'
+
+quit

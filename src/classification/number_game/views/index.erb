@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Number Game</title>
+  <style>
+   p { font-size: 25px; font-weight: bold;}
+  </style>
+</head> 
+
+<body>
+
+<% current_image = Random.rand game.test_loader.dataset.images.size %>
+
+<h1>Image <%= current_image %></h1>
+
+<img src="/<%= current_image %>.png" width="280", height="280"/>
+
+<% prediction =  game.predict(current_image) %>
+
+<p>
+I think image with index <%= current_image %> is a <%= prediction %>
+</p>
+
+<p>
+It is a <%= game.label(current_image) %> and 
+I was <%= prediction == game.label(current_image) ? "right" : "wrong" %>
+</p>
+
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+set term png
+set output "brain_regression_ruby.png"
+set autoscale
+#
+#  Fields in each record are separated by commas.
+#
+set datafile separator ","
+
+set title "Body weight versus Brain weight"
+set xlabel "Brain weight in pounds"
+set ylabel "Body weight in pounds"
+set grid
+set timestamp
+f(x) = m*x+b
+m=6.646550967830864
+b=6.676573205397993
+plot 'brain.csv' using 2:3 title 'Line Fit' with points, f(x) title 'Ruby'
+quit
