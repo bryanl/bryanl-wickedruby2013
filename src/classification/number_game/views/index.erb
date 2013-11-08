@@ -3,7 +3,14 @@
 <head>
   <title>Number Game</title>
   <style>
-   p { font-size: 25px; font-weight: bold;}
+   body {
+     font-family: Tahoma, Geneva, sans-serif 
+   }
+   p { font-size: 40px; font-weight: bold;}
+   body { padding-top: 40px; padding-left: 125px; }
+   .right { color: green }
+   .wrong { color: red }
+   .image { text-align: center }
   </style>
 </head> 
 
@@ -11,19 +18,21 @@
 
 <% current_image = Random.rand game.test_loader.dataset.images.size %>
 
-<h1>Image <%= current_image %></h1>
 
+<div class='image'>
+<h1>Image <%= current_image %></h1>
 <img src="/<%= current_image %>.png" width="280", height="280"/>
+</div>
 
 <% prediction =  game.predict(current_image) %>
 
 <p>
-I think image with index <%= current_image %> is a <%= prediction %>
+I think image #<%= current_image %> is a <%= prediction %>
 </p>
 
 <p>
 It is a <%= game.label(current_image) %> and 
-I was <%= prediction == game.label(current_image) ? "right" : "wrong" %>
+I was <%= prediction == game.label(current_image) ? "<span class='right'>right</span>" : "<span class='wrong'>wrong</span>" %>
 </p>
 
 </body>
